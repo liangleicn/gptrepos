@@ -2,63 +2,52 @@ import sqlite3
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 
-# connect to the database
+# Connect to the database
 conn = sqlite3.connect('mydatabase.db')
 c = conn.cursor()
 
-# get the current time
+# Get the current date and time
 now = datetime.now()
 
-# get the start time and end time for the last 30 days
-start_time = now - timedelta(days=29)
-end_time = now + timedelta(days=1)
+# Create a list of the last 30 days
+last_30_days = [now - timedelta(days=x) for x in range(29, -1, -1)]
 
-# get the start time and end time for today
-today_start_time = datetime(now.year, now.month, now.day)
-today_end_time = today_start_time + timedelta(days=1)
+# Get the number of records for each day in the last 30 days
+records_per_day = []
+for day in last_30_days:
+    start_time = day.strftime('%Y%m%d') + '00'
+    end_time = day.strftime('%Y%m%d') + '23'
+    query = "SELECT COUNT(*) FROM mytable WHERE boot_time >= ? AND boot_time <= ?"
+    c.execute(query, (start_time, end_time))
+    records_per_day.append(c.fetchone()[0])
 
-# get the data for the last 30 days
-c.execute("SELECT boot_time FROM mytable WHERE boot_time >= ? AND boot_time < ?", (start_time.strftime('%Y%m%d%H'), end_time.strftime('%Y%m%d%H')))
-data = c.fetchall()
+# Plot the trend for the last 30 days
+plt.plot(last_30_days, records_per_day)
+plt.title('Number of records per day (last 30 days)')
+plt.xlabel('Date')
+plt.ylabel('Number of records')
+plt.xticks(rotation=45)
 
-# count the number of records for each hour
-hours = [i for i in range(24)]
-counts = [0] * 24
-for row in data:
-    boot_time = datetime.strptime(row[0], '%Y%m%d%H')
-    hour = (boot_time - start_time).days * 24 + (boot_time - start_time).seconds // 3600
-    counts[hour] += 1
+# Get the number of records for each hour today
+today = datetime.now().strftime('%Y%m%d')
+records_per_hour = []
+for i in range(24):
+    if i < 10:
+        hour = '0' + str(i)
+    else:
+        hour = str(i)
+    start_time = today + hour
+    end_time = today + hour + '59'
+    query = "SELECT COUNT(*) FROM mytable WHERE boot_time >= ? AND boot_time <= ?"
+    c.execute(query, (start_time, end_time))
+    records_per_hour.append(c.fetchone()[0])
 
-# plot the trend chart for the last 30 days
-fig, ax = plt.subplots()
-ax.plot(hours, counts)
-ax.set_xticks(hours)
-ax.set_xlabel('Day')
-ax.set_ylabel('Number of Records')
-ax.set_title('Trend for the last 30 days')
+# Plot the trend for today
+plt.figure()
+plt.plot(range(24), records_per_hour)
+plt.title('Number of records per hour (today)')
+plt.xlabel('Hour')
+plt.ylabel('Number of records')
 
-# get the data for today
-c.execute("SELECT boot_time FROM mytable WHERE boot_time >= ? AND boot_time < ?", (today_start_time.strftime('%Y%m%d%H'), today_end_time.strftime('%Y%m%d%H')))
-data = c.fetchall()
-
-# count the number of records for each hour
-hours = [i for i in range(24)]
-counts = [0] * 24
-for row in data:
-    boot_time = datetime.strptime(row[0], '%Y%m%d%H')
-    hour = boot_time.hour
-    counts[hour] += 1
-
-# plot the trend chart for today
-fig, ax = plt.subplots()
-ax.plot(hours, counts)
-ax.set_xticks(hours)
-ax.set_xlabel('Hour')
-ax.set_ylabel('Number of Records')
-ax.set_title('Trend for Today')
-
-# show the plots
+# Show the plots
 plt.show()
-
-# close the database connection
-conn.close()
