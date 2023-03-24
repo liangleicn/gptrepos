@@ -1,39 +1,36 @@
 import sqlite3
-import datetime
+from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 
-# Database connection
+# Connect to database
 conn = sqlite3.connect('mydatabase.db')
-c = conn.cursor()
+cursor = conn.cursor()
 
-# Get current datetime
-now = datetime.datetime.now()
+# Get current time
+now = datetime.now()
 
-# Get datetime 7 days ago
-seven_days_ago = now - datetime.timedelta(days=7)
+# Set start time to 30 days ago
+start_time = now - timedelta(days=30)
 
-# SQL query to get records for last 7 days
-query = "SELECT boot_time FROM mytable WHERE boot_time >= ?"
-data = (seven_days_ago.strftime('%Y%m%d%H'),)
-c.execute(query, data)
+# Create list of dates for last 30 days
+dates = []
+for i in range(30):
+    date = start_time + timedelta(days=i)
+    dates.append(date.strftime("%Y%m%d"))
 
-# Count records per hour
-counts = [0] * 24
-for row in c.fetchall():
-    hour = int(row[0][-2:])
-    counts[hour] += 1
+# Get data for last 30 days
+data = {}
+for date in dates:
+    cursor.execute(f"SELECT COUNT(*) FROM mytable WHERE boot_time LIKE '{date}%'")
+    count = cursor.fetchone()[0]
+    data[date] = count
 
-# Create plot
-hours = [i for i in range(24)]
-plt.plot(hours, counts)
-
-# Set plot labels
-plt.xlabel('Hour')
+# Plot data
+plt.plot(list(data.keys()), list(data.values()))
+plt.xlabel('Date')
 plt.ylabel('Number of Records')
-plt.title('Number of Records per Hour for Last 7 Days')
-
-# Show plot
+plt.title('Boot Time Records for Last 30 Days')
 plt.show()
 
-# Close database connection
+# Close connection to database
 conn.close()
