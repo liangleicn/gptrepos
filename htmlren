@@ -1,0 +1,50 @@
+from flask import Flask, render_template
+import sqlite3
+from datetime import datetime, timedelta
+import json
+
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/data')
+def get_data():
+    # connect to database
+    conn = sqlite3.connect('mydatabase.db')
+    c = conn.cursor()
+
+    # get current time
+    current_time = datetime.now()
+
+    # get the last 30 days runs
+    last_30_days_runs = []
+    for i in range(30):
+        date = current_time - timedelta(days=i)
+        start_time = datetime(date.year, date.month, date.day)
+        end_time = start_time + timedelta(days=1)
+        query = "SELECT COUNT(*) FROM table WHERE boot_time >= ? AND boot_time < ?"
+        c.execute(query, (start_time.strftime('%Y%m%d'), end_time.strftime('%Y%m%d')))
+        count = c.fetchone()[0]
+        last_30_days_runs.append({'date': date.strftime('%Y-%m-%d'), 'count': count})
+    last_30_days_runs.reverse()
+
+    # get all the records for today
+    today_records = []
+    for i in range(24):
+        start_time = datetime(current_time.year, current_time.month, current_time.day, i)
+        end_time = start_time + timedelta(hours=1)
+        query = "SELECT COUNT(*) FROM table WHERE boot_time >= ? AND boot_time < ?"
+        c.execute(query, (start_time.strftime('%Y%m%d%H'), end_time.strftime('%Y%m%d%H')))
+        count = c.fetchone()[0]
+        today_records.append({'hour': i, 'count': count})
+
+    # close database connection
+    conn.close()
+
+    # return data as JSON
+    return json.dumps({'last_30_days_runs': last_30_days_runs, 'today_records': today_records})
+
+if __name__ == '__main__':
+    app.run(debug=True)
