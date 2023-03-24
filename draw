@@ -2,35 +2,63 @@ import sqlite3
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 
-# Connect to database
+# connect to the database
 conn = sqlite3.connect('mydatabase.db')
-cursor = conn.cursor()
+c = conn.cursor()
 
-# Get current time
+# get the current time
 now = datetime.now()
 
-# Set start time to 30 days ago
-start_time = now - timedelta(days=30)
+# get the start time and end time for the last 30 days
+start_time = now - timedelta(days=29)
+end_time = now + timedelta(days=1)
 
-# Create list of dates for last 30 days
-dates = []
-for i in range(30):
-    date = start_time + timedelta(days=i)
-    dates.append(date.strftime("%Y%m%d"))
+# get the start time and end time for today
+today_start_time = datetime(now.year, now.month, now.day)
+today_end_time = today_start_time + timedelta(days=1)
 
-# Get data for last 30 days
-data = {}
-for date in dates:
-    cursor.execute(f"SELECT COUNT(*) FROM mytable WHERE boot_time LIKE '{date}%'")
-    count = cursor.fetchone()[0]
-    data[date] = count
+# get the data for the last 30 days
+c.execute("SELECT boot_time FROM mytable WHERE boot_time >= ? AND boot_time < ?", (start_time.strftime('%Y%m%d%H'), end_time.strftime('%Y%m%d%H')))
+data = c.fetchall()
 
-# Plot data
-plt.plot(list(data.keys()), list(data.values()))
-plt.xlabel('Date')
-plt.ylabel('Number of Records')
-plt.title('Boot Time Records for Last 30 Days')
+# count the number of records for each hour
+hours = [i for i in range(24)]
+counts = [0] * 24
+for row in data:
+    boot_time = datetime.strptime(row[0], '%Y%m%d%H')
+    hour = (boot_time - start_time).days * 24 + (boot_time - start_time).seconds // 3600
+    counts[hour] += 1
+
+# plot the trend chart for the last 30 days
+fig, ax = plt.subplots()
+ax.plot(hours, counts)
+ax.set_xticks(hours)
+ax.set_xlabel('Day')
+ax.set_ylabel('Number of Records')
+ax.set_title('Trend for the last 30 days')
+
+# get the data for today
+c.execute("SELECT boot_time FROM mytable WHERE boot_time >= ? AND boot_time < ?", (today_start_time.strftime('%Y%m%d%H'), today_end_time.strftime('%Y%m%d%H')))
+data = c.fetchall()
+
+# count the number of records for each hour
+hours = [i for i in range(24)]
+counts = [0] * 24
+for row in data:
+    boot_time = datetime.strptime(row[0], '%Y%m%d%H')
+    hour = boot_time.hour
+    counts[hour] += 1
+
+# plot the trend chart for today
+fig, ax = plt.subplots()
+ax.plot(hours, counts)
+ax.set_xticks(hours)
+ax.set_xlabel('Hour')
+ax.set_ylabel('Number of Records')
+ax.set_title('Trend for Today')
+
+# show the plots
 plt.show()
 
-# Close connection to database
+# close the database connection
 conn.close()
