@@ -1,0 +1,40 @@
+import sqlite3
+import datetime
+import matplotlib.pyplot as plt
+from collections import Counter
+
+# Define exclude lists
+machine_list_name = ['machine1', 'machine2', 'machine3']
+developer_list_name = ['developer1', 'developer2', 'developer3']
+already_involved_list_name = ['user1', 'user2', 'user3']
+
+# Connect to database
+conn = sqlite3.connect('mydatabase.db')
+c = conn.cursor()
+
+# Get current time and 7 days ago
+now = datetime.datetime.now()
+week_ago = now - datetime.timedelta(days=7)
+
+# Query the database for records within the last 7 days
+query = f"SELECT boot_time FROM mytable WHERE boot_time > '{week_ago.strftime('%Y%m%d')}'"
+c.execute(query)
+
+# Extract the boot times and count the occurrences
+boot_times = [int(row[0]) for row in c.fetchall()]
+boot_times_count = Counter(boot_times)
+
+# Print the boot times and their respective record counts
+print("Boot Time\tRecords")
+for boot_time, count in boot_times_count.items():
+    print(f"{boot_time}\t{count}")
+
+# Plot a bar chart of the boot times and their respective record counts
+plt.bar(boot_times_count.keys(), boot_times_count.values())
+plt.xlabel('Boot Time')
+plt.ylabel('Number of Records')
+plt.title('Record Count by Boot Time')
+plt.show()
+
+# Close the database connection
+conn.close()
