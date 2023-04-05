@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Change to the root folder
+cd root
+
+# Get the latest tag for all repos and compare with HEAD
+for repo in repoa repob repoc repod; do
+  # Get the latest tag
+  latest_tag=$(git -C $repo describe --tags $(git -C $repo rev-list --tags --max-count=1))
+
+  # Compare with HEAD
+  if [[ $(git -C $repo rev-parse HEAD) != $(git -C $repo rev-parse $latest_tag) ]]; then
+    # If there is a difference between HEAD and the latest tag, set CHANGE variable to true and break out of the loop
+    EXPORT CHANGE=true
+    break
+  fi
+done
+
+# Print the value of CHANGE variable
+echo $CHANGE
