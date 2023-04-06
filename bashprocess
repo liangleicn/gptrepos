@@ -13,13 +13,14 @@ for file in "$dir_path"/*.sh; do
 
     # Adjust indentation to four spaces
     sed -i -e '/{/ { N; s/\n\([[:blank:]]*\){/\n\1    {/ }' \
-           -e '/{/!s/^\([[:blank:]]*\)[[:alnum:]_]*([^)]*)\)/\1    \0/' \
+           -e '/{/!s/^\([[:blank:]]*\)[[:alnum:]_]*\([^)]*\)/\1    \0/' \
            -e '/{/!s/^\([[:blank:]]*\)if [^;]*then/\1    if \2 then/' \
            -e '/{/!s/^\([[:blank:]]*\)elif [^;]*then/\1    elif \2 then/' \
            -e '/{/!s/^\([[:blank:]]*\)else/\1    else/' \
            -e '/{/!s/^\([[:blank:]]*\)for [^;]*; [^;]*; [^;]*; do/\1    for \2; \3; \4; do/' \
            -e '/{/!s/^\([[:blank:]]*\)while [^(]*do/\1    while \2 do/' \
            -e '/{/!s/^\([[:blank:]]*\)until [^(]*do/\1    until \2 do/' \
+           -e 's/fi[[:blank:]]*/fi/' \
            "$file"
            
     echo "Adjusted format for $file"
