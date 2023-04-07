@@ -1,1 +1,2 @@
 git log -n 1 --tags --simplify-by-decoration --pretty='format:%d' origin/master m/master | sed -e 's/.*,\s*\(.*\),\s*.*/\1/' | head -n 1
+git ls-remote --tags --sort='v:refname' --refs origin | awk '{print $2}' | xargs -I {} git show --format="%ci %d" {} | awk '{print $1" "$2" "$3" "$4,$5}' | sed 's/^[^/]*\///' | sed 's/[()]//g'
