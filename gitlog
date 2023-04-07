@@ -1,0 +1,1 @@
+git log -n 1 --tags --simplify-by-decoration --pretty='format:%d' origin/master m/master | sed -e 's/.*,\s*\(.*\),\s*.*/\1/' | head -n 1
