@@ -1,0 +1,64 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <utility> // for std::pair
+#include <sstream> // for std::istringstream
+#include <iomanip> // for std::hex
+
+struct DataPair {
+    std::string time;
+    uint32_t addr;
+    uint32_t data;
+};
+
+int main() {
+    std::vector<DataPair> data_pairs; // vector to store addr-data pairs
+
+    // open the csv file
+    std::ifstream infile("filename.csv");
+
+    // read the header line
+    std::string header;
+    std::getline(infile, header);
+
+    // read each line of the file
+    std::string line;
+    while (std::getline(infile, line)) {
+        std::istringstream iss(line);
+        std::string time_str, name_str, addr_str, data_str;
+
+        // read the time, name, addr, and data columns from the line
+        if (std::getline(iss, time_str, ',') && std::getline(iss, name_str, ',') && std::getline(iss, addr_str, ',') && std::getline(iss, data_str, ',')) {
+            // convert the addr and data strings to uint32_t values
+            uint32_t addr = std::stoul(addr_str, nullptr, 16); // assume hex format
+            uint32_t data = std::stoul(data_str, nullptr, 16); // assume hex format
+
+            // create a DataPair struct with time, addr, and data values
+            DataPair data_pair{time_str, addr, data};
+
+            // add the struct to the vector
+            data_pairs.push_back(data_pair);
+        }
+    }
+
+    // generate an array from the vector
+    const size_t num_pairs = data_pairs.size();
+    uint32_t* data_array = new uint32_t[num_pairs * 3];
+    for (size_t i = 0; i < num_pairs; i++) {
+        data_array[i * 3] = std::stoul(data_pairs[i].time);
+        data_array[i * 3 + 1] = data_pairs[i].addr;
+        data_array[i * 3 + 2] = data_pairs[i].data;
+    }
+
+    // print the array
+    for (size_t i = 0; i < num_pairs; i++) {
+        std::cout << "Time: " << data_array[i * 3]
+                  << " Addr: 0x" << std::setfill('0') << std::setw(8) << std::hex << data_array[i * 3 + 1]
+                  << " Data: 0x" << std::setfill('0') << std::setw(8) << std::hex << data_array[i * 3 + 2] << std::endl;
+    }
+
+    // free the memory allocated for the array
+    delete[] data_array;
+
+    return 0;
+}
